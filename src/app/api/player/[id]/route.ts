@@ -60,25 +60,82 @@ export async function GET(
         s.sacks_allowed,
         s.pancakes,
         s.penalties,
-        -- Recruiting
-        rp.star_rating,
-        rp.composite_rating,
-        rp.national_rank,
-        rp.position_rank,
-        rp.recruiting_class_year
+        -- Recruiting (from new table)
+        r.stars as star_rating,
+        r.rating as composite_rating,
+        r.national_rank,
+        r.position_rank,
+        r.recruit_year as recruiting_class_year,
+        r.high_school,
+        r.city as recruit_city,
+        r.state as recruit_state
       FROM players p
       LEFT JOIN teams t ON t.id = p.current_team_id
       LEFT JOIN nil_valuations n ON n.player_id = p.id
       LEFT JOIN portal_entries pe ON pe.player_id = p.id
       LEFT JOIN teams ft ON ft.id = pe.from_team_id
       LEFT JOIN player_stats s ON s.player_id = p.id AND s.season = 2025
-      LEFT JOIN recruiting_profiles rp ON rp.player_id = p.id
+      LEFT JOIN player_recruiting r ON r.player_id = p.id
       WHERE p.id = ${id}
     `;
 
     if (!player) {
       return NextResponse.json({ error: 'Player not found' }, { status: 404 });
     }
+
+    // Get historical season stats (multiple years)
+    const seasonHistory = await sql`
+      SELECT 
+        season,
+        team,
+        games,
+        pass_completions,
+        pass_attempts,
+        pass_yards,
+        pass_tds,
+        interceptions,
+        rush_attempts,
+        rush_yards,
+        rush_tds,
+        receptions,
+        rec_yards,
+        rec_tds,
+        tackles,
+        solo_tackles,
+        sacks,
+        tfl,
+        qb_hurries,
+        interceptions_def,
+        pass_deflections,
+        forced_fumbles
+      FROM player_season_history
+      WHERE player_id = ${id}
+      ORDER BY season DESC
+    `;
+
+    // Get game logs (2024 season)
+    const gameLogs = await sql`
+      SELECT 
+        opponent,
+        home_away,
+        pass_completions,
+        pass_attempts,
+        pass_yards,
+        pass_tds,
+        interceptions,
+        rush_attempts,
+        rush_yards,
+        rush_tds,
+        receptions,
+        rec_yards,
+        rec_tds,
+        tackles,
+        sacks,
+        tfl
+      FROM player_game_logs
+      WHERE player_id = ${id}
+      ORDER BY cfbd_game_id
+    `;
 
     // Get similar players (same position, similar NIL value)
     const similarPlayers = await sql`
@@ -103,6 +160,8 @@ export async function GET(
 
     return NextResponse.json({
       player,
+      seasonHistory,
+      gameLogs,
       similarPlayers,
     });
   } catch (error) {

@@ -58,6 +58,10 @@ interface Player {
   composite_rating: number | null;
   national_rank: number | null;
   position_rank: number | null;
+  recruiting_class_year: number | null;
+  high_school: string | null;
+  recruit_city: string | null;
+  recruit_state: string | null;
 }
 
 interface SimilarPlayer {
@@ -102,6 +106,8 @@ export default function PlayerProfilePage() {
   const params = useParams();
   const [player, setPlayer] = useState<Player | null>(null);
   const [similarPlayers, setSimilarPlayers] = useState<SimilarPlayer[]>([]);
+  const [seasonHistory, setSeasonHistory] = useState<any[]>([]);
+  const [gameLogs, setGameLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -111,6 +117,8 @@ export default function PlayerProfilePage() {
         const data = await res.json();
         setPlayer(data.player);
         setSimilarPlayers(data.similarPlayers || []);
+        setSeasonHistory(data.seasonHistory || []);
+        setGameLogs(data.gameLogs || []);
       } catch (error) {
         console.error('Error fetching player:', error);
       } finally {
@@ -332,6 +340,192 @@ export default function PlayerProfilePage() {
                   <StatCard label="Composite" value={player.composite_rating?.toFixed(2)} />
                   <StatCard label="National Rank" value={`#${player.national_rank}`} />
                   <StatCard label="Position Rank" value={`#${player.position_rank}`} />
+                </div>
+                {player.high_school && (
+                  <p className="text-zinc-500 text-sm mt-4">
+                    {player.high_school} • {player.recruit_city}, {player.recruit_state}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Game Logs */}
+            {gameLogs.length > 0 && (
+              <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+                <h2 className="text-lg font-semibold mb-4">2024 Game Log</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-800 text-zinc-500 text-xs uppercase">
+                        <th className="text-left py-2 pr-4">Opponent</th>
+                        {(player.position === 'QB') && (
+                          <>
+                            <th className="text-right px-2">C/A</th>
+                            <th className="text-right px-2">YDS</th>
+                            <th className="text-right px-2">TD</th>
+                            <th className="text-right px-2">INT</th>
+                          </>
+                        )}
+                        {(player.position === 'RB') && (
+                          <>
+                            <th className="text-right px-2">CAR</th>
+                            <th className="text-right px-2">YDS</th>
+                            <th className="text-right px-2">TD</th>
+                            <th className="text-right px-2">REC</th>
+                          </>
+                        )}
+                        {(player.position === 'WR' || player.position === 'TE') && (
+                          <>
+                            <th className="text-right px-2">REC</th>
+                            <th className="text-right px-2">YDS</th>
+                            <th className="text-right px-2">TD</th>
+                          </>
+                        )}
+                        {(player.position === 'EDGE' || player.position === 'DL' || player.position === 'LB') && (
+                          <>
+                            <th className="text-right px-2">TKL</th>
+                            <th className="text-right px-2">SACK</th>
+                            <th className="text-right px-2">TFL</th>
+                          </>
+                        )}
+                        {(player.position === 'CB' || player.position === 'S') && (
+                          <>
+                            <th className="text-right px-2">TKL</th>
+                            <th className="text-right px-2">TFL</th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gameLogs.map((g, i) => (
+                        <tr key={i} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                          <td className="py-2 pr-4">
+                            <span className="text-zinc-500 text-xs mr-1">{g.home_away === 'away' ? '@' : 'vs'}</span>
+                            {g.opponent}
+                          </td>
+                          {(player.position === 'QB') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{g.pass_completions}/{g.pass_attempts}</td>
+                              <td className="text-right px-2 font-medium">{g.pass_yards}</td>
+                              <td className="text-right px-2 text-emerald-400">{g.pass_tds}</td>
+                              <td className="text-right px-2 text-red-400">{g.interceptions}</td>
+                            </>
+                          )}
+                          {(player.position === 'RB') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{g.rush_attempts}</td>
+                              <td className="text-right px-2 font-medium">{g.rush_yards}</td>
+                              <td className="text-right px-2 text-emerald-400">{g.rush_tds}</td>
+                              <td className="text-right px-2">{g.receptions}</td>
+                            </>
+                          )}
+                          {(player.position === 'WR' || player.position === 'TE') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{g.receptions}</td>
+                              <td className="text-right px-2 font-medium">{g.rec_yards}</td>
+                              <td className="text-right px-2 text-emerald-400">{g.rec_tds}</td>
+                            </>
+                          )}
+                          {(player.position === 'EDGE' || player.position === 'DL' || player.position === 'LB') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{g.tackles}</td>
+                              <td className="text-right px-2 text-emerald-400">{g.sacks}</td>
+                              <td className="text-right px-2">{g.tfl}</td>
+                            </>
+                          )}
+                          {(player.position === 'CB' || player.position === 'S') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{g.tackles}</td>
+                              <td className="text-right px-2">{g.tfl}</td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Season History */}
+            {seasonHistory.length > 0 && (
+              <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-6">
+                <h2 className="text-lg font-semibold mb-4">Career Stats</h2>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-800 text-zinc-500 text-xs uppercase">
+                        <th className="text-left py-2 pr-4">Season</th>
+                        <th className="text-left pr-4">Team</th>
+                        {(player.position === 'QB') && (
+                          <>
+                            <th className="text-right px-2">C/A</th>
+                            <th className="text-right px-2">YDS</th>
+                            <th className="text-right px-2">TD</th>
+                            <th className="text-right px-2">INT</th>
+                          </>
+                        )}
+                        {(player.position === 'RB') && (
+                          <>
+                            <th className="text-right px-2">ATT</th>
+                            <th className="text-right px-2">YDS</th>
+                            <th className="text-right px-2">TD</th>
+                          </>
+                        )}
+                        {(player.position === 'WR' || player.position === 'TE') && (
+                          <>
+                            <th className="text-right px-2">REC</th>
+                            <th className="text-right px-2">YDS</th>
+                            <th className="text-right px-2">TD</th>
+                          </>
+                        )}
+                        {(player.position === 'EDGE' || player.position === 'DL' || player.position === 'LB' || player.position === 'CB' || player.position === 'S') && (
+                          <>
+                            <th className="text-right px-2">TKL</th>
+                            <th className="text-right px-2">SACK</th>
+                            <th className="text-right px-2">TFL</th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seasonHistory.map((s, i) => (
+                        <tr key={i} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                          <td className="py-2 pr-4 font-medium">{s.season}</td>
+                          <td className="pr-4 text-zinc-400">{s.team}</td>
+                          {(player.position === 'QB') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{s.pass_completions}/{s.pass_attempts}</td>
+                              <td className="text-right px-2 font-medium">{s.pass_yards?.toLocaleString()}</td>
+                              <td className="text-right px-2 text-emerald-400">{s.pass_tds}</td>
+                              <td className="text-right px-2 text-red-400">{s.interceptions}</td>
+                            </>
+                          )}
+                          {(player.position === 'RB') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{s.rush_attempts}</td>
+                              <td className="text-right px-2 font-medium">{s.rush_yards?.toLocaleString()}</td>
+                              <td className="text-right px-2 text-emerald-400">{s.rush_tds}</td>
+                            </>
+                          )}
+                          {(player.position === 'WR' || player.position === 'TE') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{s.receptions}</td>
+                              <td className="text-right px-2 font-medium">{s.rec_yards?.toLocaleString()}</td>
+                              <td className="text-right px-2 text-emerald-400">{s.rec_tds}</td>
+                            </>
+                          )}
+                          {(player.position === 'EDGE' || player.position === 'DL' || player.position === 'LB' || player.position === 'CB' || player.position === 'S') && (
+                            <>
+                              <td className="text-right px-2 text-zinc-300">{s.tackles}</td>
+                              <td className="text-right px-2 text-emerald-400">{s.sacks}</td>
+                              <td className="text-right px-2">{s.tfl}</td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
