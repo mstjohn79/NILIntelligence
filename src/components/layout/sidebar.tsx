@@ -10,6 +10,7 @@ import {
   Building2,
   Search,
   Settings,
+  Target,
 } from "lucide-react";
 
 const navigation = [
@@ -17,6 +18,7 @@ const navigation = [
   { name: "Players", href: "/players", icon: Users },
   { name: "Transfer Portal", href: "/portal", icon: ArrowRightLeft },
   { name: "Teams", href: "/teams", icon: Building2 },
+  { name: "Coach Search", href: "/search", icon: Target },
 ];
 
 export function Sidebar() {
