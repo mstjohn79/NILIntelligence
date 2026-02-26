@@ -337,12 +337,12 @@ export default function PlayerProfilePage() {
                   <div className="bg-zinc-800/50 rounded-lg p-3">
                     <p className="text-zinc-500 text-xs uppercase tracking-wide mb-1">Star Rating</p>
                     <p className="text-xl font-bold text-amber-400">
-                      {'★'.repeat(player.star_rating)}{'☆'.repeat(5 - player.star_rating)}
+                      {'★'.repeat(player.star_rating || 0)}{'☆'.repeat(5 - (player.star_rating || 0))}
                     </p>
                   </div>
-                  <StatCard label="Composite" value={player.composite_rating?.toFixed(2)} />
-                  <StatCard label="National Rank" value={`#${player.national_rank}`} />
-                  <StatCard label="Position Rank" value={`#${player.position_rank}`} />
+                  <StatCard label="Composite" value={player.composite_rating ? Number(player.composite_rating).toFixed(4) : null} />
+                  <StatCard label="National Rank" value={player.national_rank ? `#${player.national_rank}` : null} />
+                  <StatCard label="Position Rank" value={player.position_rank ? `#${player.position_rank}` : null} />
                 </div>
                 {player.high_school && (
                   <p className="text-zinc-500 text-sm mt-4">
