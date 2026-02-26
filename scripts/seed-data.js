@@ -79,12 +79,12 @@ async function seedRosters(teams) {
           INSERT INTO players (cfbd_id, name, position, height_inches, weight_lbs, hometown_city, hometown_state, current_team_id, class_year)
           VALUES (
             ${player.id},
-            ${player.first_name + ' ' + player.last_name},
+            ${player.firstName + ' ' + player.lastName},
             ${player.position},
             ${player.height || null},
             ${player.weight || null},
-            ${player.home_city || null},
-            ${player.home_state || null},
+            ${player.homeCity || null},
+            ${player.homeState || null},
             ${dbTeam.id},
             ${player.year ? String(player.year) : null}
           )

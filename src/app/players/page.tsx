@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sidebar, Header } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -13,31 +15,61 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Search,
-  Filter,
-  Download,
-} from "lucide-react";
+import { Search, Filter, Download } from "lucide-react";
 
-// Mock player data
-const players = [
-  { id: 1, name: "Arch Manning", position: "QB", team: "Texas", conference: "SEC", stars: 5, nilValue: 3200000, class: "SO" },
-  { id: 2, name: "Dylan Raiola", position: "QB", team: "Nebraska", conference: "Big Ten", stars: 5, nilValue: 2100000, class: "FR" },
-  { id: 3, name: "Jeremiah Smith", position: "WR", team: "Ohio State", conference: "Big Ten", stars: 5, nilValue: 1800000, class: "FR" },
-  { id: 4, name: "Travis Hunter", position: "CB/WR", team: "Colorado", conference: "Big 12", stars: 5, nilValue: 4500000, class: "JR" },
-  { id: 5, name: "Nico Iamaleava", position: "QB", team: "Tennessee", conference: "SEC", stars: 5, nilValue: 1500000, class: "SO" },
-  { id: 6, name: "Julian Lewis", position: "QB", team: "USC", conference: "Big Ten", stars: 5, nilValue: 1200000, class: "FR" },
-  { id: 7, name: "Keelon Russell", position: "QB", team: "Alabama", conference: "SEC", stars: 5, nilValue: 900000, class: "FR" },
-  { id: 8, name: "Bryce Underwood", position: "QB", team: "Michigan", conference: "Big Ten", stars: 5, nilValue: 850000, class: "FR" },
-];
+type Player = {
+  id: string;
+  name: string;
+  position: string;
+  team: string;
+  conference: string;
+  class_year: string;
+  nil_value: number;
+  portal_status: string | null;
+  instagram_followers: number;
+  twitter_followers: number;
+};
 
-function formatNIL(value: number): string {
+function formatNIL(value: number | null): string {
+  if (!value) return "N/A";
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
   return `$${value}`;
 }
 
 export default function PlayersPage() {
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [total, setTotal] = useState(0);
+
+  const fetchPlayers = async (searchTerm: string = "") => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.set("search", searchTerm);
+      params.set("limit", "50");
+
+      const res = await fetch(`/api/players?${params}`);
+      const data = await res.json();
+      setPlayers(data.players || []);
+      setTotal(data.total || 0);
+    } catch (err) {
+      console.error("Failed to fetch players:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlayers();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPlayers(search);
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -48,7 +80,7 @@ export default function PlayersPage() {
             <div>
               <h2 className="text-3xl font-bold tracking-tight">Players</h2>
               <p className="text-muted-foreground">
-                Search and discover college football players
+                {total.toLocaleString()} players in database
               </p>
             </div>
             <Button>
@@ -60,19 +92,22 @@ export default function PlayersPage() {
           {/* Search and Filters */}
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="flex gap-4">
+              <form onSubmit={handleSearch} className="flex gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Search players by name..."
                     className="pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
-                <Button variant="outline">
+                <Button type="submit">Search</Button>
+                <Button type="button" variant="outline">
                   <Filter className="mr-2 h-4 w-4" />
                   Filters
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
 
@@ -90,39 +125,72 @@ export default function PlayersPage() {
                     <TableHead>Team</TableHead>
                     <TableHead>Conference</TableHead>
                     <TableHead>Class</TableHead>
-                    <TableHead>Rating</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">NIL Value</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {players.map((player) => (
-                    <TableRow key={player.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
-                            {player.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <span className="font-medium">{player.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{player.position}</TableCell>
-                      <TableCell>{player.team}</TableCell>
-                      <TableCell>{player.conference}</TableCell>
-                      <TableCell>{player.class}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: player.stars }).map((_, i) => (
-                            <span key={i} className="text-yellow-500">★</span>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="secondary" className="font-mono">
-                          {formatNIL(player.nilValue)}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {loading
+                    ? Array.from({ length: 10 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Skeleton className="h-9 w-9 rounded-full" />
+                              <Skeleton className="h-4 w-32" />
+                            </div>
+                          </TableCell>
+                          <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                          <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                        </TableRow>
+                      ))
+                    : players.map((player) => (
+                        <TableRow
+                          key={player.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
+                                {player.name
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("") || "?"}
+                              </div>
+                              <span className="font-medium">
+                                {player.name || "Unknown"}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{player.position || "-"}</TableCell>
+                          <TableCell>{player.team || "-"}</TableCell>
+                          <TableCell>{player.conference || "-"}</TableCell>
+                          <TableCell>{player.class_year || "-"}</TableCell>
+                          <TableCell>
+                            {player.portal_status ? (
+                              <Badge
+                                variant={
+                                  player.portal_status === "committed"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                              >
+                                {player.portal_status}
+                              </Badge>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant="secondary" className="font-mono">
+                              {formatNIL(player.nil_value)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                 </TableBody>
               </Table>
             </CardContent>

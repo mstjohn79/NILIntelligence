@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sidebar, Header } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -14,33 +16,138 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Search,
-  Filter,
-  ArrowRight,
-} from "lucide-react";
+import { Search, Filter, ArrowRight } from "lucide-react";
 
-// Mock portal data
-const portalEntries = [
-  { id: 1, name: "Marcus Johnson", position: "QB", from: "Texas", to: "Ohio State", status: "committed", nilValue: 1200000, stars: 4, date: "2026-01-15" },
-  { id: 2, name: "DeShawn Williams", position: "WR", from: "Alabama", to: null, status: "entered", nilValue: 890000, stars: 4, date: "2026-02-01" },
-  { id: 3, name: "Tyler Smith", position: "RB", from: "Georgia", to: "USC", status: "committed", nilValue: 750000, stars: 5, date: "2026-01-20" },
-  { id: 4, name: "Chris Davis", position: "CB", from: "LSU", to: null, status: "entered", nilValue: 420000, stars: 3, date: "2026-02-10" },
-  { id: 5, name: "James Wilson", position: "DE", from: "Michigan", to: "Oregon", status: "committed", nilValue: 650000, stars: 4, date: "2026-01-28" },
-  { id: 6, name: "Anthony Brown", position: "LB", from: "Florida", to: null, status: "entered", nilValue: 380000, stars: 3, date: "2026-02-15" },
-  { id: 7, name: "Michael Lee", position: "OL", from: "Penn State", to: null, status: "entered", nilValue: 290000, stars: 4, date: "2026-02-18" },
-  { id: 8, name: "David Jackson", position: "S", from: "Oklahoma", to: "Texas A&M", status: "committed", nilValue: 520000, stars: 4, date: "2026-02-05" },
-];
+type PortalEntry = {
+  id: string;
+  player_name: string;
+  position: string;
+  from_team: string;
+  to_team: string | null;
+  status: string;
+  entry_date: string;
+  nil_value: number;
+};
 
-function formatNIL(value: number): string {
+type PortalStats = {
+  total: number;
+  available: number;
+  committed: number;
+  withdrawn: number;
+};
+
+function formatNIL(value: number | null): string {
+  if (!value) return "N/A";
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
   return `$${value}`;
 }
 
 export default function PortalPage() {
-  const available = portalEntries.filter(p => p.status === 'entered');
-  const committed = portalEntries.filter(p => p.status === 'committed');
+  const [entries, setEntries] = useState<PortalEntry[]>([]);
+  const [stats, setStats] = useState<PortalStats>({ total: 0, available: 0, committed: 0, withdrawn: 0 });
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const fetchPortal = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/portal?limit=100");
+      const data = await res.json();
+      setEntries(data.entries || []);
+      setStats(data.stats || { total: 0, available: 0, committed: 0, withdrawn: 0 });
+    } catch (err) {
+      console.error("Failed to fetch portal:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPortal();
+  }, []);
+
+  const available = entries.filter((e) => e.status === "entered");
+  const committed = entries.filter((e) => e.status === "committed");
+
+  const filteredEntries = (list: PortalEntry[]) =>
+    search
+      ? list.filter(
+          (e) =>
+            e.player_name?.toLowerCase().includes(search.toLowerCase()) ||
+            e.from_team?.toLowerCase().includes(search.toLowerCase())
+        )
+      : list;
+
+  const renderTable = (list: PortalEntry[], showDestination: boolean = false) => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Player</TableHead>
+          <TableHead>Position</TableHead>
+          <TableHead>{showDestination ? "Transfer" : "From"}</TableHead>
+          <TableHead>Entry Date</TableHead>
+          <TableHead className="text-right">NIL Value</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {loading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </TableCell>
+                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+              </TableRow>
+            ))
+          : filteredEntries(list).map((entry) => (
+              <TableRow key={entry.id} className="cursor-pointer hover:bg-muted/50">
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-medium ${
+                        entry.status === "committed"
+                          ? "bg-blue-500/10 text-blue-500"
+                          : "bg-green-500/10 text-green-500"
+                      }`}
+                    >
+                      {entry.player_name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("") || "?"}
+                    </div>
+                    <span className="font-medium">{entry.player_name || "Unknown"}</span>
+                  </div>
+                </TableCell>
+                <TableCell>{entry.position || "-"}</TableCell>
+                <TableCell>
+                  {showDestination ? (
+                    <div className="flex items-center gap-2">
+                      <span>{entry.from_team}</span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-green-500">{entry.to_team}</span>
+                    </div>
+                  ) : (
+                    entry.from_team || "-"
+                  )}
+                </TableCell>
+                <TableCell>{entry.entry_date?.split("T")[0] || "-"}</TableCell>
+                <TableCell className="text-right">
+                  <Badge variant="secondary" className="font-mono">
+                    {formatNIL(entry.nil_value)}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+      </TableBody>
+    </Table>
+  );
 
   return (
     <div className="flex h-screen bg-background">
@@ -64,7 +171,9 @@ export default function PortalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{portalEntries.length}</div>
+                <div className="text-2xl font-bold">
+                  {loading ? <Skeleton className="h-8 w-16" /> : stats.total}
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -74,7 +183,9 @@ export default function PortalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-500">{available.length}</div>
+                <div className="text-2xl font-bold text-green-500">
+                  {loading ? <Skeleton className="h-8 w-16" /> : stats.available}
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -84,7 +195,9 @@ export default function PortalPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-500">{committed.length}</div>
+                <div className="text-2xl font-bold text-blue-500">
+                  {loading ? <Skeleton className="h-8 w-16" /> : stats.committed}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -98,6 +211,8 @@ export default function PortalPage() {
                   <Input
                     placeholder="Search portal entries..."
                     className="pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
                 <Button variant="outline">
@@ -111,147 +226,34 @@ export default function PortalPage() {
           {/* Tabs */}
           <Tabs defaultValue="available" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="available">Available ({available.length})</TabsTrigger>
-              <TabsTrigger value="committed">Committed ({committed.length})</TabsTrigger>
-              <TabsTrigger value="all">All ({portalEntries.length})</TabsTrigger>
+              <TabsTrigger value="available">
+                Available ({loading ? "..." : stats.available})
+              </TabsTrigger>
+              <TabsTrigger value="committed">
+                Committed ({loading ? "..." : stats.committed})
+              </TabsTrigger>
+              <TabsTrigger value="all">
+                All ({loading ? "..." : stats.total})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="available">
               <Card>
-                <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Player</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>From</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Entry Date</TableHead>
-                        <TableHead className="text-right">NIL Value</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {available.map((entry) => (
-                        <TableRow key={entry.id} className="cursor-pointer hover:bg-muted/50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/10 text-xs font-medium text-green-500">
-                                {entry.name.split(' ').map(n => n[0]).join('')}
-                              </div>
-                              <span className="font-medium">{entry.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{entry.position}</TableCell>
-                          <TableCell>{entry.from}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {Array.from({ length: entry.stars }).map((_, i) => (
-                                <span key={i} className="text-yellow-500">★</span>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>{entry.date}</TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant="secondary" className="font-mono">
-                              {formatNIL(entry.nilValue)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
+                <CardContent className="pt-6">{renderTable(available)}</CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="committed">
               <Card>
                 <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Player</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Transfer</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead className="text-right">NIL Value</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {committed.map((entry) => (
-                        <TableRow key={entry.id} className="cursor-pointer hover:bg-muted/50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/10 text-xs font-medium text-blue-500">
-                                {entry.name.split(' ').map(n => n[0]).join('')}
-                              </div>
-                              <span className="font-medium">{entry.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{entry.position}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span>{entry.from}</span>
-                              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-green-500">{entry.to}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              {Array.from({ length: entry.stars }).map((_, i) => (
-                                <span key={i} className="text-yellow-500">★</span>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant="secondary" className="font-mono">
-                              {formatNIL(entry.nilValue)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  {renderTable(committed, true)}
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="all">
               <Card>
-                <CardContent className="pt-6">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Player</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>From</TableHead>
-                        <TableHead>To</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">NIL Value</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {portalEntries.map((entry) => (
-                        <TableRow key={entry.id} className="cursor-pointer hover:bg-muted/50">
-                          <TableCell>
-                            <span className="font-medium">{entry.name}</span>
-                          </TableCell>
-                          <TableCell>{entry.position}</TableCell>
-                          <TableCell>{entry.from}</TableCell>
-                          <TableCell>{entry.to || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant={entry.status === 'committed' ? 'default' : 'secondary'}>
-                              {entry.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-mono">{formatNIL(entry.nilValue)}</span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
+                <CardContent className="pt-6">{renderTable(entries)}</CardContent>
               </Card>
             </TabsContent>
           </Tabs>

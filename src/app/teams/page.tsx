@@ -1,36 +1,62 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Sidebar, Header } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Search,
-} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search } from "lucide-react";
 
-// Mock teams data
-const teams = [
-  { id: 1, name: "Alabama", mascot: "Crimson Tide", conference: "SEC", rosterSize: 85, scholarships: 85, avgNIL: 245000, color: "#9E1B32" },
-  { id: 2, name: "Ohio State", mascot: "Buckeyes", conference: "Big Ten", rosterSize: 85, scholarships: 85, avgNIL: 238000, color: "#BB0000" },
-  { id: 3, name: "Georgia", mascot: "Bulldogs", conference: "SEC", rosterSize: 85, scholarships: 85, avgNIL: 235000, color: "#BA0C2F" },
-  { id: 4, name: "Texas", mascot: "Longhorns", conference: "SEC", rosterSize: 85, scholarships: 85, avgNIL: 228000, color: "#BF5700" },
-  { id: 5, name: "Michigan", mascot: "Wolverines", conference: "Big Ten", rosterSize: 85, scholarships: 85, avgNIL: 215000, color: "#00274C" },
-  { id: 6, name: "USC", mascot: "Trojans", conference: "Big Ten", rosterSize: 85, scholarships: 85, avgNIL: 210000, color: "#990000" },
-  { id: 7, name: "Oregon", mascot: "Ducks", conference: "Big Ten", rosterSize: 85, scholarships: 84, avgNIL: 195000, color: "#154733" },
-  { id: 8, name: "Penn State", mascot: "Nittany Lions", conference: "Big Ten", rosterSize: 85, scholarships: 85, avgNIL: 188000, color: "#041E42" },
-  { id: 9, name: "LSU", mascot: "Tigers", conference: "SEC", rosterSize: 85, scholarships: 85, avgNIL: 185000, color: "#461D7C" },
-  { id: 10, name: "Tennessee", mascot: "Volunteers", conference: "SEC", rosterSize: 85, scholarships: 85, avgNIL: 178000, color: "#FF8200" },
-  { id: 11, name: "Florida State", mascot: "Seminoles", conference: "ACC", rosterSize: 85, scholarships: 83, avgNIL: 165000, color: "#782F40" },
-  { id: 12, name: "Colorado", mascot: "Buffaloes", conference: "Big 12", rosterSize: 85, scholarships: 85, avgNIL: 155000, color: "#CFB87C" },
-];
+type Team = {
+  id: string;
+  name: string;
+  mascot: string;
+  abbreviation: string;
+  conference: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  roster_size: number;
+  avg_nil: number;
+};
 
-function formatNIL(value: number): string {
+function formatNIL(value: number | null): string {
+  if (!value) return "N/A";
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
   return `$${value}`;
 }
 
 export default function TeamsPage() {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const fetchTeams = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/teams");
+      const data = await res.json();
+      setTeams(data.teams || []);
+    } catch (err) {
+      console.error("Failed to fetch teams:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const filteredTeams = search
+    ? teams.filter(
+        (t) =>
+          t.name?.toLowerCase().includes(search.toLowerCase()) ||
+          t.conference?.toLowerCase().includes(search.toLowerCase())
+      )
+    : teams;
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -40,7 +66,7 @@ export default function TeamsPage() {
           <div className="mb-8">
             <h2 className="text-3xl font-bold tracking-tight">Teams</h2>
             <p className="text-muted-foreground">
-              Browse FBS college football programs
+              {teams.length} FBS college football programs
             </p>
           </div>
 
@@ -48,47 +74,96 @@ export default function TeamsPage() {
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search teams..."
+              placeholder="Search teams or conferences..."
               className="pl-10 max-w-md"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
           {/* Teams Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {teams.map((team) => (
-              <Card key={team.id} className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="flex h-12 w-12 items-center justify-center rounded-lg text-white font-bold"
-                      style={{ backgroundColor: team.color }}
-                    >
-                      {team.name.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{team.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{team.mascot}</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Conference</span>
-                      <Badge variant="outline">{team.conference}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Scholarships</span>
-                      <span className="text-sm font-medium">{team.scholarships}/85</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Avg NIL</span>
-                      <span className="text-sm font-medium text-green-500">{formatNIL(team.avgNIL)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {loading
+              ? Array.from({ length: 12 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-12 w-12 rounded-lg" />
+                        <div>
+                          <Skeleton className="h-5 w-24 mb-1" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              : filteredTeams.map((team) => (
+                  <Card
+                    key={team.id}
+                    className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        {team.logo_url ? (
+                          <img
+                            src={team.logo_url}
+                            alt={team.name}
+                            className="h-12 w-12 object-contain"
+                          />
+                        ) : (
+                          <div
+                            className="flex h-12 w-12 items-center justify-center rounded-lg text-white font-bold"
+                            style={{
+                              backgroundColor: team.primary_color || "#333",
+                            }}
+                          >
+                            {team.abbreviation?.substring(0, 2) ||
+                              team.name?.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <CardTitle className="text-lg">{team.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            {team.mascot}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Conference
+                          </span>
+                          <Badge variant="outline">{team.conference || "Independent"}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Roster Size
+                          </span>
+                          <span className="text-sm font-medium">
+                            {team.roster_size || 0}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Avg NIL
+                          </span>
+                          <span className="text-sm font-medium text-green-500">
+                            {formatNIL(team.avg_nil)}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
           </div>
         </main>
       </div>
