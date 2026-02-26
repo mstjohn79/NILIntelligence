@@ -21,7 +21,7 @@ type DashboardData = {
     topNilValue: number;
   };
   recentPortal: Array<{
-    player_id: string;
+    player_id: string | number;
     player_name: string;
     position: string;
     from_team: string;
@@ -30,7 +30,7 @@ type DashboardData = {
     nil_value: number;
   }>;
   topPlayers: Array<{
-    id: string;
+    id: string | number;
     name: string;
     position: string;
     team: string;
@@ -152,7 +152,7 @@ export default function Dashboard() {
                     {data?.recentPortal.map((player, idx) => (
                       <Link
                         key={idx}
-                        href={`/player/${player.player_id}`}
+                        href={`/player/${String(player.player_id)}`}
                         className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0 hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition"
                       >
                         <div className="flex items-center gap-4">
@@ -212,7 +212,7 @@ export default function Dashboard() {
                     {data?.topPlayers.map((player, idx) => (
                       <Link
                         key={idx}
-                        href={`/player/${player.id}`}
+                        href={`/player/${String(player.id)}`}
                         className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0 hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition"
                       >
                         <div className="flex items-center gap-4">
