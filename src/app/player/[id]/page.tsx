@@ -74,19 +74,22 @@ interface SimilarPlayer {
   portal_status: string | null;
 }
 
-function formatMoney(value: number): string {
+function formatMoney(value: number | null | undefined): string {
+  if (value === null || value === undefined) return 'N/A';
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`;
   return `$${value}`;
 }
 
-function formatHeight(inches: number): string {
+function formatHeight(inches: number | null | undefined): string {
+  if (inches === null || inches === undefined) return 'N/A';
   const feet = Math.floor(inches / 12);
   const remainingInches = inches % 12;
   return `${feet}'${remainingInches}"`;
 }
 
-function formatFollowers(count: number): string {
+function formatFollowers(count: number | null | undefined): string {
+  if (count === null || count === undefined) return '0';
   if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
   return count.toString();
@@ -200,8 +203,8 @@ export default function PlayerProfilePage() {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-zinc-500 mt-2">
                     <span>{formatHeight(player.height_inches)}</span>
-                    <span>{player.weight_lbs} lbs</span>
-                    <span>{player.class_year}</span>
+                    <span>{player.weight_lbs ? `${player.weight_lbs} lbs` : 'N/A'}</span>
+                    <span>{player.class_year || 'N/A'}</span>
                     {player.hometown_city && (
                       <span>{player.hometown_city}, {player.hometown_state}</span>
                     )}
