@@ -51,6 +51,8 @@ interface Player {
   pass_deflections: number | null;
   games_started: number | null;
   pancakes: number | null;
+  sacks_allowed: number | null;
+  penalties: number | null;
   // Recruiting
   star_rating: number | null;
   composite_rating: number | null;
@@ -86,7 +88,7 @@ function formatFollowers(count: number): string {
   return count.toString();
 }
 
-function StatCard({ label, value, suffix = '' }: { label: string; value: number | string | null; suffix?: string }) {
+function StatCard({ label, value, suffix = '' }: { label: string; value: number | string | null | undefined; suffix?: string }) {
   if (value === null || value === undefined) return null;
   return (
     <div className="bg-zinc-800/50 rounded-lg p-3">
