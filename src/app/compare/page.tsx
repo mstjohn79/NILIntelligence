@@ -13,14 +13,14 @@ type Player = {
   name: string;
   position: string;
   team: string;
-  valuation_usd: number | null;
+  nil_value: number | null;
   pass_yards: number | null;
   pass_tds: number | null;
   rush_yards: number | null;
   rush_tds: number | null;
   receptions: number | null;
-  receiving_yards: number | null;
-  receiving_tds: number | null;
+  rec_yards: number | null;
+  rec_tds: number | null;
   tackles: number | null;
   sacks: number | null;
   interceptions: number | null;
@@ -262,7 +262,7 @@ function CompareContent() {
                   <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
                     <span className="text-sm text-zinc-400">NIL Value</span>
                     <span className="font-semibold text-emerald-400">
-                      {formatNIL(player.valuation_usd)}
+{formatNIL(player.nil_value)}
                     </span>
                   </div>
                   {player.portal_status && (
@@ -299,7 +299,7 @@ function CompareContent() {
                 <div className="text-sm text-zinc-400">NIL Value</div>
                 {players.map(player => (
                   <div key={player.id} className="text-center font-medium text-emerald-400">
-                    {formatNIL(player.valuation_usd)}
+                    {formatNIL(player.nil_value)}
                   </div>
                 ))}
               </div>
@@ -344,11 +344,11 @@ function CompareContent() {
                   />
                   <StatComparison 
                     label="Rec Yards" 
-                    values={players.map(p => p.receiving_yards)} 
+                    values={players.map(p => p.rec_yards)} 
                   />
                   <StatComparison 
                     label="Rec TDs" 
-                    values={players.map(p => p.receiving_tds)} 
+                    values={players.map(p => p.rec_tds)} 
                   />
                 </>
               )}
