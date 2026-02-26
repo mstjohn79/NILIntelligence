@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Sidebar, Header } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -153,17 +154,17 @@ export default function PlayersPage() {
                           className="cursor-pointer hover:bg-muted/50"
                         >
                           <TableCell>
-                            <div className="flex items-center gap-3">
+                            <Link href={`/player/${player.id}`} className="flex items-center gap-3">
                               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-xs font-medium">
                                 {player.name
                                   ?.split(" ")
                                   .map((n) => n[0])
                                   .join("") || "?"}
                               </div>
-                              <span className="font-medium">
+                              <span className="font-medium hover:underline">
                                 {player.name || "Unknown"}
                               </span>
-                            </div>
+                            </Link>
                           </TableCell>
                           <TableCell>{player.position || "-"}</TableCell>
                           <TableCell>{player.team || "-"}</TableCell>

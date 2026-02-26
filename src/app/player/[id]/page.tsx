@@ -612,9 +612,12 @@ export default function PlayerProfilePage() {
                 <button className="w-full py-2 px-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition text-sm font-medium">
                   Export Profile
                 </button>
-                <button className="w-full py-2 px-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition text-sm font-medium">
+                <Link 
+                  href={`/compare?ids=${player.id}`}
+                  className="block w-full py-2 px-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition text-sm font-medium text-center"
+                >
                   Compare Players
-                </button>
+                </Link>
               </div>
             </div>
           </div>

@@ -14,6 +14,7 @@ export async function GET() {
     // Get recent portal activity
     const recentPortal = await sql`
       SELECT 
+        p.id as player_id,
         p.name as player_name,
         p.position,
         ft.name as from_team,
@@ -33,6 +34,7 @@ export async function GET() {
     // Get top NIL players
     const topPlayers = await sql`
       SELECT 
+        p.id,
         p.name,
         p.position,
         t.name as team,

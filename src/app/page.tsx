@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Sidebar, Header } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ type DashboardData = {
     topNilValue: number;
   };
   recentPortal: Array<{
+    player_id: string;
     player_name: string;
     position: string;
     from_team: string;
@@ -28,6 +30,7 @@ type DashboardData = {
     nil_value: number;
   }>;
   topPlayers: Array<{
+    id: string;
     name: string;
     position: string;
     team: string;
@@ -147,9 +150,10 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-4">
                     {data?.recentPortal.map((player, idx) => (
-                      <div
+                      <Link
                         key={idx}
-                        className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0"
+                        href={`/player/${player.player_id}`}
+                        className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0 hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition"
                       >
                         <div className="flex items-center gap-4">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-medium">
@@ -178,7 +182,7 @@ export default function Dashboard() {
                             {formatNIL(player.nil_value)}
                           </span>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -206,9 +210,10 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-4">
                     {data?.topPlayers.map((player, idx) => (
-                      <div
+                      <Link
                         key={idx}
-                        className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0"
+                        href={`/player/${player.id}`}
+                        className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0 hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition"
                       >
                         <div className="flex items-center gap-4">
                           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/10 text-sm font-bold text-yellow-500">
@@ -224,7 +229,7 @@ export default function Dashboard() {
                         <span className="font-semibold text-green-500">
                           {formatNIL(player.valuation_usd)}
                         </span>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 )}
