@@ -1,3 +1,5 @@
+"use client";
+
 import { Sidebar, Header } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
